@@ -1,7 +1,11 @@
 import React from "react";
 import { Button, Upload, message, Tree, Space, Popconfirm } from "antd";
 import type { UploadProps } from "antd";
-import { InboxOutlined, DeleteOutlined } from "@ant-design/icons";
+import {
+  InboxOutlined,
+  DeleteOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
 import { parseExcelToJson, ExcelFileData } from "../utils/excelParser";
 
 const { Dragger } = Upload;
@@ -24,6 +28,29 @@ const FilePool: React.FC<FilePoolProps> = ({
       onFilesLoaded([parsed]);
     } catch (err) {
       message.error(`解析失败：${(file as any).name}`);
+    }
+  };
+
+  const handleSelectFiles = async () => {
+    if (!window.electronAPI?.openFileDialog) {
+      message.error("主进程通信未就绪，请稍后重试");
+      return;
+    }
+
+    // 获取文件路径
+    const filePaths: string[] = await window.electronAPI.openFileDialog();
+    if (filePaths.length === 0) return;
+
+    // 读取Excel文件内容
+    for (const path of filePaths) {
+      try {
+        const data = await window.electronAPI.readExcel(path);
+        console.log("data：", data);
+        // const parsed = await parseExcelToJson((file as any).path);
+        // onFilesLoaded([parsed]);
+      } catch (err) {
+        message.error(`解析失败：${path.split(/[\\/]/).pop()}`);
+      }
     }
   };
 
@@ -51,7 +78,21 @@ const FilePool: React.FC<FilePoolProps> = ({
 
   return (
     <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-      <Dragger
+      <div style={{ textAlign: "center" }}>
+        <Button
+          type="primary"
+          size="large"
+          icon={<UploadOutlined />}
+          onClick={handleSelectFiles}
+        >
+          选择 Excel 文件
+        </Button>
+        <div style={{ marginTop: 8, color: "#888", fontSize: 12 }}>
+          支持多选、批量上传
+        </div>
+      </div>
+
+      {/* <Dragger
         multiple
         customRequest={handleUpload}
         showUploadList={false}
@@ -61,15 +102,11 @@ const FilePool: React.FC<FilePoolProps> = ({
           <InboxOutlined />
         </p>
         <p className="ant-upload-text">点击或拖拽 Excel 文件到此区域</p>
-      </Dragger>
+      </Dragger> */}
 
       <div style={{ maxHeight: "70vh", overflow: "auto" }}>
-        {treeData.length > 0 ? (
+        {treeData.length > 0 && (
           <Tree defaultExpandAll treeData={treeData} showLine />
-        ) : (
-          <div style={{ textAlign: "center", color: "#999", marginTop: 50 }}>
-            暂无文件，拖拽上传开始
-          </div>
         )}
       </div>
     </Space>
