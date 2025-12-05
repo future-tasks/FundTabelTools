@@ -93,3 +93,6 @@ out/
 
 # JetBrains IDEs
 .idea/
+
+# VSCode
+.vscode
