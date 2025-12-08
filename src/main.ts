@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from "electron";
+import { app, BrowserWindow, ipcMain, dialog, Tray, Menu, nativeImage } from "electron";
 import path from "node:path";
 import started from "electron-squirrel-startup";
 
@@ -7,13 +7,24 @@ if (started) {
   app.quit();
 }
 
+let tray: Tray | null = null;
+
 const createWindow = () => {
+  // 创建托盘图标
+  const iconPath = process.platform === 'win32' 
+      ? path.join(__dirname, 'assets', 'icon.ico')   // Windows
+      : path.join(__dirname, 'assets', 'icon.png')
+
   // Create the browser window.
   const mainWindow = new BrowserWindow({
+    icon: iconPath,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
     },
+    show: false,
   });
+
+  mainWindow.once('ready-to-show', () => mainWindow.show());
 
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
@@ -28,10 +39,54 @@ const createWindow = () => {
   mainWindow.webContents.openDevTools();
 };
 
+
+function createTray() {
+  const iconPath = process.platform === 'win32'
+    ?path.join(__dirname, 'assets', 'icon.ico')
+    : process.platform === 'darwin'
+    ?path.join(__dirname, 'assets', 'icon.png')
+    :path.join(__dirname, 'assets', 'icon.png');
+
+  const icon = nativeImage.createFromPath(iconPath);
+  tray = new Tray(icon.resize({ width: 16, height: 16 })); // Windows 托盘推荐 16x16
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: '显示主窗口',
+      click: () => {
+        const win = BrowserWindow.getAllWindows()[0];
+        if (win) {
+          if (win.isMinimized()) win.restore();
+          win.focus();
+        }
+      }
+    },
+    { type: 'separator' },
+    {
+      label: '退出 ExcelCalcPro',
+      click: () => app.quit()
+    }
+  ]);
+
+  tray.setToolTip('ExcelCalcPro - 专业多文件计算工具');
+  tray.setContextMenu(contextMenu);
+
+  tray.on('click', () => {
+    const win = BrowserWindow.getAllWindows()[0];
+    if (win) {
+      if (win.isVisible()) win.focus();
+      else win.show();
+    }
+  });
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on("ready", createWindow);
+app.on("ready", () =>{
+  createWindow();
+  createTray();
+});
 
 // 打开文件对话框
 ipcMain.handle("dialog:openFile", async () => {

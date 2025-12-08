@@ -41,9 +41,11 @@ const FilePool: React.FC<FilePoolProps> = ({
 
   // 清空全部文件函数
   const handleClearAll = () => {
-    files.forEach((file) => onRemoveFile(file.id));
-    message.success("已清空所有文件");
-    if (onClearAll) onClearAll(); // 联动关闭 Tabs
+    // 不要逐个调用 onRemoveFile，而是让父组件一次性清空所有文件
+    if (onClearAll) {
+      onClearAll();
+      message.success("已清空所有文件");
+    }
   };
 
   // 用 ref 收集本次批量上传的文件（防抖）

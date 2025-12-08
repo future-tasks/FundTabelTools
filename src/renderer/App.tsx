@@ -45,6 +45,12 @@ const App: React.FC = () => {
     }
   };
 
+  const handleClearAllFiles = () => {
+    setFiles(new Map());
+    setActiveTabs([]);
+    setActiveKey("");
+  };
+
   const openFileTab = (file: ExcelFileData) => {
     const existing = activeTabs.find((t) => t.fileId === file.id);
     if (existing) {
@@ -108,10 +114,7 @@ const App: React.FC = () => {
             onFilesLoaded={handleFilesLoaded}
             onRemoveFile={handleRemoveFile}
             onFileClick={openFileTab}
-            onClearAll={() => {
-              setActiveTabs([]); // 清空所有 Tabs
-              setActiveKey("");
-            }}
+            onClearAll={handleClearAllFiles}
           />
         </Sider>
 

@@ -177,254 +177,258 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({
 
   return (
     <Space orientation="vertical" size="large" style={{ width: "100%" }}>
-      {rules.map((rule, index) => (
-        <Card
-          key={rule.key}
-          size="small"
-          title={
-            <Space>
-              {index > 0 && (
-                <Select
-                  value={rule.logic}
-                  onChange={(v) => updateRule(rule.key, "logic", v)}
-                  size="small"
-                >
-                  <Option value="AND">AND</Option>
-                  <Option value="OR">OR</Option>
-                </Select>
-              )}
-              <Tag color="blue">主规则 {index + 1}</Tag>
-            </Space>
-          }
-          extra={
-            <Button
-              danger
+      <div style={{ overflow: "auto", width: '100%', maxHeight: '50vh' }}>
+        <Space orientation="vertical" style={{ width: '100%' }}>
+          {rules.map((rule, index) => (
+            <Card
+              key={rule.key}
               size="small"
-              icon={<DeleteOutlined />}
-              onClick={() => removeRule(rule.key)}
-            />
-          }
-        >
-          <Space orientation="vertical" style={{ width: "100%" }} size="middle">
-            {/* 主规则区域 */}
-            <Space wrap>
-              <ExcelTree
-                filesData={filesData}
-                value={
-                  rule.fileId && rule.sheetName
-                    ? `${rule.fileId}|${rule.sheetName}`
-                    : undefined
-                }
-                onChange={(v) => {
-                  const [fileId, sheetName] = (v as string).split("|");
-                  updateRule(rule.key, "fileId", fileId);
-                  updateRule(rule.key, "sheetName", sheetName);
-                }}
-                placeholder="选择工作表"
-                usedSheets={usedSheets}
-              />
-
-              <Select
-                value={rule.type}
-                onChange={(v) => updateRule(rule.key, "type", v)}
-                style={{ width: 120 }}
-              >
-                <Option value="cell">单元格</Option>
-                <Option value="row">整行</Option>
-                <Option value="column">整列（范围）</Option>
-                <Option value="custom">自定义值</Option>
-              </Select>
-
-              {rule.type !== "custom" ? (
-                <Input
-                  placeholder={
-                    rule.type === "cell"
-                      ? "A1"
-                      : rule.type === "row"
-                        ? "5"
-                        : "B"
-                  }
-                  value={rule.ref}
-                  onChange={(e) => updateRule(rule.key, "ref", e.target.value)}
-                  style={{ width: 100 }}
-                />
-              ) : (
+              title={
                 <Space>
-                  <Input
-                    placeholder="说明（如：固定费用）"
-                    value={rule.description}
-                    onChange={(e) =>
-                      updateRule(rule.key, "description", e.target.value)
-                    }
-                  />
-                  <InputNumber
-                    value={rule.value}
-                    onChange={(v) => updateRule(rule.key, "value", v as number)}
-                  />
-                </Space>
-              )}
-
-              {rule.type === "column" && (
-                <Space>
-                  <InputNumber
-                    min={1}
-                    placeholder="起始行"
-                    value={rule.startRow}
-                    onChange={(v) =>
-                      updateRule(rule.key, "startRow", v as number)
-                    }
-                  />
-                  <span>~</span>
-                  <InputNumber
-                    min={1}
-                    placeholder="结束行（留空=最后）"
-                    value={rule.endRow}
-                    onChange={(v) =>
-                      updateRule(rule.key, "endRow", v as number)
-                    }
-                  />
-                </Space>
-              )}
-            </Space>
-
-            {/* 排除规则折叠面板 */}
-            <Collapse ghost activeKey={rule.enableExclude ? "exclude" : ""}>
-              <Panel
-                header={
-                  <Space>
-                    <Switch
-                      checkedChildren="已启用筛选"
-                      unCheckedChildren="点击启用筛选/排除"
-                      checked={rule.enableExclude}
-                      onChange={(v) => updateRule(rule.key, "enableExclude", v)}
-                    />
-                    <FilterOutlined
-                      style={{ color: rule.enableExclude ? "#1890ff" : "#aaa" }}
-                    />
-                    <span
-                      style={{ color: rule.enableExclude ? "#1890ff" : "#999" }}
-                    >
-                      {rule.enableExclude
-                        ? `已启用 ${rule.excludeConditions.length} 条筛选条件`
-                        : "添加筛选条件（如排除“测试”行）"}
-                    </span>
-                  </Space>
-                }
-                key="exclude"
-                showArrow={false}
-              >
-                <Space
-                  orientation="vertical"
-                  style={{ width: "100%", marginTop: 8 }}
-                  size="small"
-                >
-                  {rule.excludeConditions.map((cond, i) => (
-                    <Card
-                      key={cond.key}
+                  {index > 0 && (
+                    <Select
+                      value={rule.logic}
+                      onChange={(v) => updateRule(rule.key, "logic", v)}
                       size="small"
-                      style={{ background: "#f9f9f9" }}
                     >
-                      <Space>
-                        <span>{i + 1}.</span>
-                        <Select
-                          value={cond.mode}
-                          onChange={(v) => {
-                            setRules(
-                              rules.map((r) => {
-                                if (r.key === rule.key) {
-                                  return {
-                                    ...r,
-                                    excludeConditions: r.excludeConditions.map(
-                                      (c) =>
-                                        c.key === cond.key
-                                          ? { ...c, mode: v }
-                                          : c
-                                    ),
-                                  };
-                                }
-                                return r;
-                              })
-                            );
-                          }}
-                        >
-                          <Option value="exclude">排除包含</Option>
-                          <Option value="include">仅保留包含</Option>
-                        </Select>
-                        <Input
-                          placeholder="列（如 A）"
-                          value={cond.column}
-                          onChange={(e) => {
-                            setRules(
-                              rules.map((r) => {
-                                if (r.key === rule.key) {
-                                  return {
-                                    ...r,
-                                    excludeConditions: r.excludeConditions.map(
-                                      (c) =>
-                                        c.key === cond.key
-                                          ? {
-                                              ...c,
-                                              column:
-                                                e.target.value.toUpperCase(),
-                                            }
-                                          : c
-                                    ),
-                                  };
-                                }
-                                return r;
-                              })
-                            );
-                          }}
-                          style={{ width: 80 }}
-                        />
-                        <Input
-                          placeholder="关键字"
-                          value={cond.keyword}
-                          onChange={(e) => {
-                            setRules(
-                              rules.map((r) => {
-                                if (r.key === rule.key) {
-                                  return {
-                                    ...r,
-                                    excludeConditions: r.excludeConditions.map(
-                                      (c) =>
-                                        c.key === cond.key
-                                          ? { ...c, keyword: e.target.value }
-                                          : c
-                                    ),
-                                  };
-                                }
-                                return r;
-                              })
-                            );
-                          }}
-                        />
-                        <Button
-                          danger
-                          size="small"
-                          icon={<DeleteOutlined />}
-                          onClick={() =>
-                            removeExcludeCondition(rule.key, cond.key)
-                          }
-                        />
-                      </Space>
-                    </Card>
-                  ))}
-                  <Button
-                    type="dashed"
-                    size="small"
-                    block
-                    icon={<PlusOutlined />}
-                    onClick={() => addExcludeCondition(rule.key)}
-                  >
-                    添加筛选条件
-                  </Button>
+                      <Option value="AND">AND</Option>
+                      <Option value="OR">OR</Option>
+                    </Select>
+                  )}
+                  <Tag color="blue">主规则 {index + 1}</Tag>
                 </Space>
-              </Panel>
-            </Collapse>
-          </Space>
-        </Card>
-      ))}
+              }
+              extra={
+                <Button
+                  danger
+                  size="small"
+                  icon={<DeleteOutlined />}
+                  onClick={() => removeRule(rule.key)}
+                />
+              }
+            >
+              <Space orientation="vertical" style={{ width: "100%" }} size="middle">
+                {/* 主规则区域 */}
+                <Space wrap>
+                  <ExcelTree
+                    filesData={filesData}
+                    value={
+                      rule.fileId && rule.sheetName
+                        ? `${rule.fileId}|${rule.sheetName}`
+                        : undefined
+                    }
+                    onChange={(v) => {
+                      const [fileId, sheetName] = (v as string).split("|");
+                      updateRule(rule.key, "fileId", fileId);
+                      updateRule(rule.key, "sheetName", sheetName);
+                    }}
+                    placeholder="选择工作表"
+                    usedSheets={usedSheets}
+                  />
+
+                  <Select
+                    value={rule.type}
+                    onChange={(v) => updateRule(rule.key, "type", v)}
+                    style={{ width: 120 }}
+                  >
+                    <Option value="cell">单元格</Option>
+                    <Option value="row">整行</Option>
+                    <Option value="column">整列（范围）</Option>
+                    <Option value="custom">自定义值</Option>
+                  </Select>
+
+                  {rule.type !== "custom" ? (
+                    <Input
+                      placeholder={
+                        rule.type === "cell"
+                          ? "A1"
+                          : rule.type === "row"
+                            ? "5"
+                            : "B"
+                      }
+                      value={rule.ref}
+                      onChange={(e) => updateRule(rule.key, "ref", e.target.value)}
+                      style={{ width: 100 }}
+                    />
+                  ) : (
+                    <Space>
+                      <Input
+                        placeholder="说明（如：固定费用）"
+                        value={rule.description}
+                        onChange={(e) =>
+                          updateRule(rule.key, "description", e.target.value)
+                        }
+                      />
+                      <InputNumber
+                        value={rule.value}
+                        onChange={(v) => updateRule(rule.key, "value", v as number)}
+                      />
+                    </Space>
+                  )}
+
+                  {rule.type === "column" && (
+                    <Space>
+                      <InputNumber
+                        min={1}
+                        placeholder="起始行"
+                        value={rule.startRow}
+                        onChange={(v) =>
+                          updateRule(rule.key, "startRow", v as number)
+                        }
+                      />
+                      <span>~</span>
+                      <InputNumber
+                        min={1}
+                        placeholder="结束行（留空=最后）"
+                        value={rule.endRow}
+                        onChange={(v) =>
+                          updateRule(rule.key, "endRow", v as number)
+                        }
+                      />
+                    </Space>
+                  )}
+                </Space>
+
+                {/* 排除规则折叠面板 */}
+                <Collapse ghost activeKey={rule.enableExclude ? "exclude" : ""}>
+                  <Panel
+                    header={
+                      <Space>
+                        <Switch
+                          checkedChildren="已启用筛选"
+                          unCheckedChildren="点击启用筛选/排除"
+                          checked={rule.enableExclude}
+                          onChange={(v) => updateRule(rule.key, "enableExclude", v)}
+                        />
+                        <FilterOutlined
+                          style={{ color: rule.enableExclude ? "#1890ff" : "#aaa" }}
+                        />
+                        <span
+                          style={{ color: rule.enableExclude ? "#1890ff" : "#999" }}
+                        >
+                          {rule.enableExclude
+                            ? `已启用 ${rule.excludeConditions.length} 条筛选条件`
+                            : "添加筛选条件（如排除“测试”行）"}
+                        </span>
+                      </Space>
+                    }
+                    key="exclude"
+                    showArrow={false}
+                  >
+                    <Space
+                      orientation="vertical"
+                      style={{ width: "100%", marginTop: 8 }}
+                      size="small"
+                    >
+                      {rule.excludeConditions.map((cond, i) => (
+                        <Card
+                          key={cond.key}
+                          size="small"
+                          style={{ background: "#f9f9f9" }}
+                        >
+                          <Space>
+                            <span>{i + 1}.</span>
+                            <Select
+                              value={cond.mode}
+                              onChange={(v) => {
+                                setRules(
+                                  rules.map((r) => {
+                                    if (r.key === rule.key) {
+                                      return {
+                                        ...r,
+                                        excludeConditions: r.excludeConditions.map(
+                                          (c) =>
+                                            c.key === cond.key
+                                              ? { ...c, mode: v }
+                                              : c
+                                        ),
+                                      };
+                                    }
+                                    return r;
+                                  })
+                                );
+                              }}
+                            >
+                              <Option value="exclude">排除包含</Option>
+                              <Option value="include">仅保留包含</Option>
+                            </Select>
+                            <Input
+                              placeholder="列（如 A）"
+                              value={cond.column}
+                              onChange={(e) => {
+                                setRules(
+                                  rules.map((r) => {
+                                    if (r.key === rule.key) {
+                                      return {
+                                        ...r,
+                                        excludeConditions: r.excludeConditions.map(
+                                          (c) =>
+                                            c.key === cond.key
+                                              ? {
+                                                ...c,
+                                                column:
+                                                  e.target.value.toUpperCase(),
+                                              }
+                                              : c
+                                        ),
+                                      };
+                                    }
+                                    return r;
+                                  })
+                                );
+                              }}
+                              style={{ width: 80 }}
+                            />
+                            <Input
+                              placeholder="关键字"
+                              value={cond.keyword}
+                              onChange={(e) => {
+                                setRules(
+                                  rules.map((r) => {
+                                    if (r.key === rule.key) {
+                                      return {
+                                        ...r,
+                                        excludeConditions: r.excludeConditions.map(
+                                          (c) =>
+                                            c.key === cond.key
+                                              ? { ...c, keyword: e.target.value }
+                                              : c
+                                        ),
+                                      };
+                                    }
+                                    return r;
+                                  })
+                                );
+                              }}
+                            />
+                            <Button
+                              danger
+                              size="small"
+                              icon={<DeleteOutlined />}
+                              onClick={() =>
+                                removeExcludeCondition(rule.key, cond.key)
+                              }
+                            />
+                          </Space>
+                        </Card>
+                      ))}
+                      <Button
+                        type="dashed"
+                        size="small"
+                        block
+                        icon={<PlusOutlined />}
+                        onClick={() => addExcludeCondition(rule.key)}
+                      >
+                        添加筛选条件
+                      </Button>
+                    </Space>
+                  </Panel>
+                </Collapse>
+              </Space>
+            </Card>
+          ))}
+        </Space>
+      </div>
 
       <Space orientation="vertical" size={20} style={{ width: "100%" }}>
         <Button
