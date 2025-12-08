@@ -9,8 +9,10 @@ import {
   Upload,
   message,
   Grid,
+  Popconfirm,
 } from "antd";
 import {
+  ClearOutlined,
   DeleteOutlined,
   FileExcelOutlined,
   UploadOutlined,
@@ -25,6 +27,7 @@ interface FilePoolProps {
   onFilesLoaded: (files: ExcelFileData[]) => void;
   onRemoveFile: (fileId: string) => void;
   onFileClick: (file: ExcelFileData) => void;
+  onClearAll?: () => void;
 }
 
 const FilePool: React.FC<FilePoolProps> = ({
@@ -32,8 +35,16 @@ const FilePool: React.FC<FilePoolProps> = ({
   onFilesLoaded,
   onRemoveFile,
   onFileClick,
+  onClearAll,
 }) => {
   const screens = useBreakpoint();
+
+  // 清空全部文件函数
+  const handleClearAll = () => {
+    files.forEach((file) => onRemoveFile(file.id));
+    message.success("已清空所有文件");
+    if (onClearAll) onClearAll(); // 联动关闭 Tabs
+  };
 
   // 用 ref 收集本次批量上传的文件（防抖）
   const batchFiles = useRef<File[]>([]);
@@ -160,6 +171,23 @@ const FilePool: React.FC<FilePoolProps> = ({
           </div>
         </Space>
       </Upload.Dragger>
+
+      {files.length > 0 && (
+        <div style={{ paddingTop: 8, textAlign: "right" }}>
+          <Popconfirm
+            title="确定清空所有文件吗？"
+            description="此操作不可恢复，所有相关 Tabs 将关闭"
+            onConfirm={handleClearAll}
+            okText="确定清空"
+            cancelText="取消"
+            okButtonProps={{ danger: true }}
+          >
+            <Button danger icon={<ClearOutlined />} size="small">
+              清空全部文件
+            </Button>
+          </Popconfirm>
+        </div>
+      )}
 
       <div style={{ flex: 1, overflow: "auto", padding: "0 8px" }}>
         {files.length === 0 ? (

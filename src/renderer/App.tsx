@@ -108,6 +108,10 @@ const App: React.FC = () => {
             onFilesLoaded={handleFilesLoaded}
             onRemoveFile={handleRemoveFile}
             onFileClick={openFileTab}
+            onClearAll={() => {
+              setActiveTabs([]); // 清空所有 Tabs
+              setActiveKey("");
+            }}
           />
         </Sider>
 
