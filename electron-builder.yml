@@ -1,48 +1,15 @@
-# electron-builder.yml
-appId: com.excelcalcpro.app
-productName: ExcelCalcPro
-copyright: Copyright © 2025 ExcelCalcPro
+appId: com.example.app
+productName: 指指点点
+
 directories:
-  output: release # 打包输出目录
-  buildResources: assets # 图标等资源放这里
+  output: dist
+  buildResources: public/icons
 
-files:
-  - dist/**/*
-  - assets/** # 包含所有图标
-
-# Windows 配置（最重要）
-win:
-  target:
-    - target: nsis # 安装包（推荐）
-      arch:
-        - x64
-  icon: assets/icon.ico # 256×256 的 .ico
-  publisher: ExcelCalcPro
-
-# macOS 配置
 mac:
-  target:
-    - dmg
-    - zip
-  icon: assets/icon.icns # macOS 专用格式
-  category: public.app-category.productivity
+  icon: public/icons/icon.icns
 
-# Linux 配置
+win:
+  icon: public/icons/icon.ico
+
 linux:
-  target:
-    - AppImage
-    - deb
-  icon: assets/icon.png
-
-# 通用压缩与签名（可先不填）
-compression: maximum
-asar: true
-
-# NSIS 安装包美化（Windows）
-nsis:
-  oneClick: false # 经典安装向导（更专业）
-  allowToChangeInstallationDirectory: true
-  perMachine: false
-  menuCategory: true
-  createDesktopShortcut: true
-  createStartMenuShortcut: true
+  icon: public/icons/icon.png

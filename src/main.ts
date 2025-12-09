@@ -1,4 +1,12 @@
-import { app, BrowserWindow, ipcMain, dialog, Tray, Menu, nativeImage } from "electron";
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  dialog,
+  Tray,
+  Menu,
+  nativeImage,
+} from "electron";
 import path from "node:path";
 import started from "electron-squirrel-startup";
 
@@ -8,23 +16,32 @@ if (started) {
 }
 
 let tray: Tray | null = null;
+// 窗口图标
+const iconPath = {
+  win32: "public/icons/icon.ico", // Windows 图标
+  darwin: "public/icons/icon.icns", // macOS 图标
+  linux: "public/icons/icon.png", // Linux 图标
+  // 其他平台默认使用 PNG 图标
+  aix: "public/icons/icon.png",
+  freebsd: "public/icons/icon.png",
+  openbsd: "public/icons/icon.png",
+  sunos: "public/icons/icon.png",
+  android: "public/icons/icon.png",
+  haiku: "public/icons/icon.png",
+  cygwin: "public/icons/icon.png",
+  netbsd: "public/icons/icon.png",
+};
 
 const createWindow = () => {
-  // 创建托盘图标
-  const iconPath = process.platform === 'win32' 
-      ? path.join(__dirname, 'assets', 'icon.ico')   // Windows
-      : path.join(__dirname, 'assets', 'icon.png')
-
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    icon: iconPath,
+    icon: path.join(__dirname, iconPath[process.platform]),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
     },
-    show: false,
   });
 
-  mainWindow.once('ready-to-show', () => mainWindow.show());
+  mainWindow.once("ready-to-show", () => mainWindow.show());
 
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
@@ -39,39 +56,34 @@ const createWindow = () => {
   mainWindow.webContents.openDevTools();
 };
 
-
 function createTray() {
-  const iconPath = process.platform === 'win32'
-    ?path.join(__dirname, 'assets', 'icon.ico')
-    : process.platform === 'darwin'
-    ?path.join(__dirname, 'assets', 'icon.png')
-    :path.join(__dirname, 'assets', 'icon.png');
-
-  const icon = nativeImage.createFromPath(iconPath);
+  const icon = nativeImage.createFromPath(
+    path.join(__dirname, iconPath[process.platform])
+  );
   tray = new Tray(icon.resize({ width: 16, height: 16 })); // Windows 托盘推荐 16x16
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: '显示主窗口',
+      label: "显示主窗口",
       click: () => {
         const win = BrowserWindow.getAllWindows()[0];
         if (win) {
           if (win.isMinimized()) win.restore();
           win.focus();
         }
-      }
+      },
     },
-    { type: 'separator' },
+    { type: "separator" },
     {
-      label: '退出 ExcelCalcPro',
-      click: () => app.quit()
-    }
+      label: "退出应用",
+      click: () => app.quit(),
+    },
   ]);
 
-  tray.setToolTip('ExcelCalcPro - 专业多文件计算工具');
+  tray.setToolTip("指指点点 - 让统计更简单");
   tray.setContextMenu(contextMenu);
 
-  tray.on('click', () => {
+  tray.on("click", () => {
     const win = BrowserWindow.getAllWindows()[0];
     if (win) {
       if (win.isVisible()) win.focus();
@@ -83,7 +95,7 @@ function createTray() {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on("ready", () =>{
+app.on("ready", () => {
   createWindow();
   createTray();
 });
