@@ -78,6 +78,14 @@ const createWindow = () => {
 
   const mainWindow = new BrowserWindow(windowOptions);
 
+  mainWindow.on("close", (event) => {
+    if (!app.isQuitting) {
+      // 自定义标志，防止右键退出时被拦截
+      event.preventDefault();
+      mainWindow.hide(); // 隐藏窗口
+    }
+  });
+
   mainWindow.once("ready-to-show", () => mainWindow.show());
 
   // and load the index.html of the app.
@@ -144,7 +152,10 @@ function createTray() {
     { type: "separator" },
     {
       label: "退出应用",
-      click: () => app.quit(),
+      click: () => {
+        app.isQuitting = true; // 设置标志，允许真正关闭
+        app.quit();
+      },
     },
   ]);
 
@@ -211,9 +222,9 @@ ipcMain.handle("app:getUserDataPath", () => {
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
+  // if (process.platform !== "darwin") {
+  //   app.quit();
+  // }
 });
 
 app.on("activate", () => {
