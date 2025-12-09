@@ -82,13 +82,13 @@ const HistoryPanel: React.FC = () => {
                 <Text style={{ color: "#888", fontSize: 12 }}>{item.time}</Text>
                 <br />
                 <Space>
-                  <Text strong ellipsis={true} style={{ maxWidth: 100 }}>
+                  <Text strong ellipsis={true} style={{ maxWidth: 120 }}>
                     {item.fileName}
                   </Text>
-                  <Text strong ellipsis={true} style={{ maxWidth: 100 }}>
+                  <Text strong ellipsis={true} style={{ maxWidth: 120 }}>
                     {item.sheetName}
                   </Text>
-                  <Text strong ellipsis={true} style={{ maxWidth: 100 }}>
+                  <Text strong ellipsis={true} style={{ maxWidth: 120 }}>
                     - {item.result.toLocaleString()}
                   </Text>
                 </Space>

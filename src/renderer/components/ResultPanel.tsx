@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Statistic,
   Card,
@@ -8,19 +8,35 @@ import {
   message,
   Flex,
   Space,
+  Input,
 } from "antd";
-import { CopyOutlined } from "@ant-design/icons";
+import { CopyOutlined, EditOutlined } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 
 interface ResultPanelProps {
   result: number;
+  initialResultName?: string;
+  onNameChange?: (name: string) => void;
 }
 
-const ResultPanel: React.FC<ResultPanelProps> = ({ result }) => {
+const ResultPanel: React.FC<ResultPanelProps> = ({
+  result,
+  initialResultName,
+  onNameChange,
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(initialResultName || "");
   const {
     token: { colorPrimary },
   } = theme.useToken();
+
+  // 当外部传入的name变化时，更新编辑状态的name
+  useEffect(() => {
+    if (initialResultName !== undefined) {
+      setEditName(initialResultName);
+    }
+  }, [initialResultName]);
 
   const handleCopy = () => {
     if (result !== 0) {
@@ -48,9 +64,50 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ result }) => {
         <Space>
           <Statistic
             title={
-              <Title level={3} style={{ margin: 0, color: "#666" }}>
-                计算结果
-              </Title>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "8px" }}
+              >
+                {isEditing ? (
+                  <Space>
+                    <Input
+                      size="large"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      onPressEnter={() => {
+                        onNameChange?.(editName);
+                        setIsEditing(false);
+                      }}
+                      onBlur={() => {
+                        onNameChange?.(editName);
+                        setIsEditing(false);
+                      }}
+                      placeholder="输入自定义名称"
+                      maxLength={50}
+                      autoFocus
+                    />
+                    <Button
+                      type="primary"
+                      size="small"
+                      onClick={() => {
+                        onNameChange?.(editName);
+                        setIsEditing(false);
+                      }}
+                    >
+                      确定
+                    </Button>
+                  </Space>
+                ) : (
+                  <Space>
+                    <Title level={3} style={{ margin: 0, color: "#666" }}>
+                      {editName ? editName : "计算结果"}
+                    </Title>
+                    <EditOutlined
+                      onClick={() => setIsEditing(true)}
+                      style={{ cursor: "pointer" }}
+                    />
+                  </Space>
+                )}
+              </div>
             }
             value={result}
             precision={2}

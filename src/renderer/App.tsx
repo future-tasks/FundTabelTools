@@ -72,13 +72,12 @@ const App: React.FC = () => {
       return;
     }
 
-    const targetSheet = sheetName || file.sheets[0]?.name || "Sheet1";
     const newTab: CalcTab = {
       key: file.id,
       label: file.name,
       fileId: file.id,
       result: 0,
-      sheetName: targetSheet,
+      sheetName: undefined,
     };
 
     setActiveTabs([...activeTabs, newTab]);
@@ -105,7 +104,7 @@ const App: React.FC = () => {
     sheetName: string
   ) => {
     setActiveTabs((tabs) =>
-      tabs.map((t) => (t.fileId === fileId ? { ...t, result } : t))
+      tabs.map((t) => (t.fileId === fileId ? { ...t, result, sheetName } : t))
     );
 
     if (result !== 0) {
@@ -115,6 +114,30 @@ const App: React.FC = () => {
           fileName: file.name,
           sheetName,
           result,
+        });
+      }
+    }
+  };
+
+  const handleResultNameChange = (fileId: string, newName: string) => {
+    setActiveTabs((prevTabs) =>
+      prevTabs.map((tab) => {
+        if (tab.fileId === fileId) {
+          return { ...tab, sheetName: newName };
+        }
+        return tab;
+      })
+    );
+
+    // 同时更新历史记录中的名称
+    const tab = activeTabs.find((t) => t.fileId === fileId);
+    if (tab && tab.result !== 0) {
+      const file = files.get(fileId);
+      if (file) {
+        addHistory({
+          result: tab.result,
+          sheetName: newName,
+          fileName: file.name,
         });
       }
     }
@@ -236,7 +259,13 @@ const App: React.FC = () => {
                         {/* 超大结果展示区（固定在底部） */}
                         <Divider style={{ margin: "16px 0" }} />
                         {/* 结果展示区 */}
-                        <ResultPanel result={result} />
+                        <ResultPanel
+                          result={result}
+                          initialResultName={tab.sheetName}
+                          onNameChange={(newName) =>
+                            handleResultNameChange(file.id, newName)
+                          }
+                        />
                       </div>
                     ),
                   };

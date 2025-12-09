@@ -57,7 +57,7 @@ export const addHistory = async (item: Omit<HistoryItem, "time">) => {
   history.unshift({
     ...item,
     // 确保sheetName不为undefined
-    sheetName: item.sheetName || "未命名工作表",
+    sheetName: item.sheetName || "未命名",
     time: new Date()
       .toLocaleString("zh-CN", {
         year: "numeric",
