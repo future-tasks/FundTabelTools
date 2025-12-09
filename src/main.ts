@@ -24,30 +24,58 @@ const __dirname2 = dirname(__filename);
 
 // 获取正确的图标路径
 function getIconPath() {
-  // 对于开发环境和生产环境使用不同的路径解析方式
   const isDev = !app.isPackaged;
-  const basePath = isDev
-    ? path.join(process.cwd(), "public", "icons")
-    : path.join(__dirname2, "public", "icons");
-
-  const iconExt =
-    process.platform === "win32"
-      ? "icon.ico"
-      : process.platform === "darwin"
-        ? "icon.icns"
-        : "icon.png";
-
-  return path.join(basePath, iconExt);
+  // 开发环境
+  if (isDev) {
+    // 开发环境 - 从原始位置获取图标
+    const iconExt =
+      process.platform === "win32"
+        ? "icon.ico"
+        : process.platform === "darwin"
+          ? "icon.icns"
+          : "icon.png";
+    return path.join(process.cwd(), "public", "icons", iconExt);
+  } else {
+    const iconExt =
+      process.platform === "win32"
+        ? "icon.ico"
+        : process.platform === "darwin"
+          ? "icon.icns"
+          : "icon.png";
+    return path.join(process.resourcesPath, iconExt);
+  }
 }
 
 const createWindow = () => {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  const windowOptions = {
     icon: getIconPath(),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
     },
-  });
+  };
+
+  // Windows平台特殊处理任务栏图标
+  if (process.platform === "win32") {
+    // Windows需要直接设置图标路径，而不是通过nativeImage对象
+    if (app.isPackaged) {
+      // 生产环境
+      windowOptions.icon = path.join(process.resourcesPath, "icon.ico");
+    } else {
+      // 开发环境
+      windowOptions.icon = path.join(
+        process.cwd(),
+        "public",
+        "icons",
+        "icon.ico"
+      );
+    }
+  } else {
+    // 其他平台使用getIconPath
+    windowOptions.icon = getIconPath();
+  }
+
+  const mainWindow = new BrowserWindow(windowOptions);
 
   mainWindow.once("ready-to-show", () => mainWindow.show());
 
@@ -67,8 +95,39 @@ const createWindow = () => {
 };
 
 function createTray() {
-  const icon = nativeImage.createFromPath(getIconPath());
-  tray = new Tray(icon.resize({ width: 16, height: 16 })); // Windows 托盘推荐 16x16
+  try {
+    // 为托盘图标使用专门的处理逻辑
+    let trayIconPath;
+
+    if (process.platform === "win32") {
+      // Windows平台特殊处理
+      if (!app.isPackaged) {
+        // 开发环境
+        trayIconPath = path.join(process.cwd(), "public", "icons", "icon.ico");
+      } else {
+        // 生产环境 - Windows托盘图标
+        trayIconPath = path.join(process.resourcesPath, "icons", "icon.ico");
+      }
+    } else {
+      // 其他平台使用通用路径
+      trayIconPath = getIconPath();
+    }
+
+    // 创建托盘图标，Windows平台不需要额外调整大小，系统会自动处理
+    const icon = nativeImage.createFromPath(trayIconPath);
+
+    // Windows平台下，确保图标尺寸适合托盘
+    if (process.platform === "win32") {
+      // 尝试创建32x32大小的图标，这是Windows托盘的最佳尺寸
+      tray = new Tray(icon.resize({ width: 32, height: 32 }));
+    } else {
+      tray = new Tray(icon.resize({ width: 16, height: 16 }));
+    }
+  } catch (error) {
+    console.error("创建托盘图标失败:", error);
+    // 如果失败，使用默认图标作为后备方案
+    tray = new Tray(nativeImage.createEmpty());
+  }
 
   const contextMenu = Menu.buildFromTemplate([
     {

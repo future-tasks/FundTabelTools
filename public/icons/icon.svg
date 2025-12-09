@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512px" height="512px" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景透明 -->
+  <rect width="512" height="512" fill="none"/>
+
+  <!-- 后层文件：浅绿，左右完全对称，彻底占满 -->
+  <g transform="translate(40,40)">
+    <rect x="0" y="0" width="432" height="432" rx="86" fill="url(#grad1)"/>
+    <!-- 右上小凸起（放大并右对齐） -->
+    <rect x="240" y="0" width="192" height="192" rx="48" fill="#7fd66e"/>
+  </g>
+
+  <!-- 前层文件：深绿，完美覆盖，右边零空隙 -->
+  <g transform="translate(20,20)">
+    <rect x="0" y="0" width="472" height="472" rx="94" fill="url(#grad2)"/>
+    
+    <!-- 超大白 X（完全居中，霸气占满） -->
+    <text x="236" y="244" font-family="Segoe UI Black, Arial" 
+          font-size="380" font-weight="900" fill="white" text-anchor="middle" dominant-baseline="central">
+      X
+    </text>
+  </g>
+
+  <!-- 官方同款渐变 -->
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#a8e6a1"/>
+      <stop offset="100%" stop-color="#6cc060"/>
+    </linearGradient>
+    <linearGradient id="grad2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2d9f47"/>
+      <stop offset="100%" stop-color="#1e7a3a"/>
+    </linearGradient>
+  </defs>
+</svg>
