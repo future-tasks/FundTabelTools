@@ -84,7 +84,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
                   />
                   <Button
                     type="primary"
-                    size="small"
+                    size="large"
                     onClick={() => {
                       onNameChange?.(editName);
                       setIsEditing(false);
