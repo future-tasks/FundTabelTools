@@ -178,7 +178,8 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({
     const refs: any[] = [];
     const excludes: any[] = [];
 
-    rules.forEach((rule) => {
+    // 按顺序处理每个规则，确保逐层处理
+    rules.forEach((rule, index) => {
       if (!rule.sheetName) return;
 
       const ref: any = {
@@ -192,6 +193,7 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({
         value: rule.value,
       };
 
+      // 为每个规则的排除条件添加索引，实现真正的逐层处理
       if (rule.enableExclude && rule.excludeConditions.length > 0) {
         rule.excludeConditions.forEach((cond) => {
           excludes.push({
@@ -200,6 +202,8 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({
             excludeColumn: cond.column,
             excludeKeyword: cond.keyword,
             excludeMode: cond.mode,
+            // 关键：添加规则索引，确保排除条件按顺序累积应用
+            ruleIndex: index,
           });
         });
       }
@@ -207,9 +211,17 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({
       refs.push(ref);
     });
 
+    // 使用逐层处理函数计算结果
     const total = evaluateCellRefs(refs, filesData, excludes);
     onCalculate(total);
-    // message.success(`计算完成！结果：${total.toLocaleString()}`);
+    
+    // 显示处理过程的详细信息
+    const processInfo = rules.map((rule, index) => {
+      const hasExcludes = rule.enableExclude && rule.excludeConditions.length > 0;
+      return `规则${index + 1}: ${hasExcludes ? `含${rule.excludeConditions.length}个筛选条件` : '无筛选'}`;
+    }).join(' → ');
+    
+    message.success(`逐层处理完成！${processInfo} → 结果：${total.toLocaleString()}`);
   };
 
   return (

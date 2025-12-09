@@ -236,7 +236,7 @@ const App: React.FC = () => {
                     key: tab.key,
                     label: (
                       <span>
-                        <Text ellipsis={{ tooltip: file?.name }}>
+                        <Text ellipsis={{ tooltip: file?.name }} style={{ maxWidth: 220 }}>
                           {file?.name || "加载中..."}
                         </Text>
                         {result !== 0 && (

@@ -77,14 +77,38 @@ interface ExcludeRule {
   excludeMode: "exclude" | "include";
 }
 
+interface RuleWithIndex extends ExcludeRule {
+  ruleIndex?: number;
+}
+
 export const evaluateCellRefs = (
   refs: CellRef[],
   filesData: Map<string, ExcelFileData>,
-  excludes: ExcludeRule[] = [] // 新增排除规则
+  excludes: ExcludeRule[] = []
 ): number => {
   let total = 0;
 
+  // 创建工作表数据的副本用于逐层处理
+  const processedSheets = new Map<string, any[][]>();
+  
+  // 初始化：为每个使用到的工作表创建数据副本
   refs.forEach((ref) => {
+    if (ref.type === "custom") return;
+    
+    const fileData = filesData.get(ref.fileId);
+    if (!fileData) return;
+    
+    const sheet = fileData.sheets.find((s) => s.name === ref.sheetName);
+    if (!sheet || !sheet.data.length) return;
+    
+    const sheetKey = `${ref.fileId}|${ref.sheetName}`;
+    if (!processedSheets.has(sheetKey)) {
+      processedSheets.set(sheetKey, [...sheet.data]);
+    }
+  });
+
+  // 逐层处理每个规则
+  refs.forEach((ref, index) => {
     if (ref.type === "custom") {
       total += ref.value || 0;
       return;
@@ -96,30 +120,42 @@ export const evaluateCellRefs = (
     const sheet = fileData.sheets.find((s) => s.name === ref.sheetName);
     if (!sheet || !sheet.data.length) return;
 
-    let data = sheet.data;
+    const sheetKey = `${ref.fileId}|${ref.sheetName}`;
+    let currentData = processedSheets.get(sheetKey);
+    if (!currentData) return;
 
-    // 应用排除规则（只针对当前 sheet）
-    const sheetExcludes = excludes.filter(
-      (e) => e.fileId === ref.fileId && e.sheetName === ref.sheetName
+    // 应用当前规则以及之前所有规则的排除条件（累积效果）
+    const cumulativeExcludes = (excludes as RuleWithIndex[]).filter(
+      (e) => e.fileId === ref.fileId && 
+             e.sheetName === ref.sheetName &&
+             (e.ruleIndex === undefined || e.ruleIndex <= index)
     );
-    if (sheetExcludes.length > 0) {
-      data = filterRowsByExcludes(data, sheetExcludes);
+    
+    if (cumulativeExcludes.length > 0) {
+      // 从原始数据开始应用累积的排除条件
+      const originalSheet = fileData.sheets.find((s) => s.name === ref.sheetName);
+      if (originalSheet) {
+        currentData = [...originalSheet.data];
+        currentData = filterRowsByExcludes(currentData, cumulativeExcludes);
+        // 更新处理后的数据，供后续规则使用
+        processedSheets.set(sheetKey, currentData);
+      }
     }
 
-    // 计算
+    // 基于当前数据计算
     if (ref.type === "cell" && ref.ref.match(/^[A-Z]+\d+$/i)) {
       const { row, col } = XLSX.utils.decode_cell(ref.ref.toUpperCase());
-      total += parseNumber(data[row]?.[col]);
+      total += parseNumber(currentData[row]?.[col]);
     } else if (ref.type === "row" && /^\d+$/.test(ref.ref)) {
       const rowIdx = parseInt(ref.ref) - 1;
-      data[rowIdx]?.forEach((v) => (total += parseNumber(v)));
+      currentData[rowIdx]?.forEach((v) => (total += parseNumber(v)));
     } else if (ref.type === "column" && ref.ref.match(/^[A-Z]+$/i)) {
       const colIdx = XLSX.utils.decode_col(ref.ref.toUpperCase());
       const start = (ref.startRow ?? 1) - 1;
-      let end = ref.endRow ? ref.endRow - 1 : findLastNonEmptyRow(data, colIdx);
+      let end = ref.endRow ? ref.endRow - 1 : findLastNonEmptyRow(currentData, colIdx);
 
       for (let r = start; r <= end; r++) {
-        total += parseNumber(data[r]?.[colIdx]);
+        total += parseNumber(currentData[r]?.[colIdx]);
       }
     }
   });
