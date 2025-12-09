@@ -1,11 +1,24 @@
 import React, { useState } from "react";
-import { Layout, Tabs, theme, message, Typography, Divider, Tag } from "antd";
+import {
+  Layout,
+  Tabs,
+  theme,
+  message,
+  Typography,
+  Divider,
+  Tag,
+  Space,
+  Flex,
+} from "antd";
 import FilePool from "./components/FilePool";
 import RuleBuilder from "./components/RuleBuilder";
 import { ExcelFileData } from "./utils/xlsxParser";
 import { createRoot } from "react-dom/client";
 import emptyIcon from "../assets/empty.svg";
 import ResultPanel from "./components/ResultPanel";
+import HistoryPanel from "./components/HistoryPanel";
+import { addHistory } from "./utils/history";
+import { HistoryProvider } from "./contexts/HistoryContext";
 
 const { Header, Content, Sider } = Layout;
 const { Title, Text } = Typography;
@@ -15,6 +28,7 @@ interface CalcTab {
   label: string;
   fileId: string;
   result: number;
+  sheetName: string;
 }
 
 const App: React.FC = () => {
@@ -51,18 +65,20 @@ const App: React.FC = () => {
     setActiveKey("");
   };
 
-  const openFileTab = (file: ExcelFileData) => {
+  const openFileTab = (file: ExcelFileData, sheetName?: string) => {
     const existing = activeTabs.find((t) => t.fileId === file.id);
     if (existing) {
       setActiveKey(existing.key);
       return;
     }
 
+    const targetSheet = sheetName || file.sheets[0]?.name || "Sheet1";
     const newTab: CalcTab = {
       key: file.id,
       label: file.name,
       fileId: file.id,
       result: 0,
+      sheetName: targetSheet,
     };
 
     setActiveTabs([...activeTabs, newTab]);
@@ -83,10 +99,25 @@ const App: React.FC = () => {
     }
   };
 
-  const updateTabResult = (fileId: string, result: number) => {
+  const updateTabResult = (
+    fileId: string,
+    result: number,
+    sheetName: string
+  ) => {
     setActiveTabs((tabs) =>
       tabs.map((t) => (t.fileId === fileId ? { ...t, result } : t))
     );
+
+    if (result !== 0) {
+      const file = files.get(fileId);
+      if (file) {
+        addHistory({
+          fileName: file.name,
+          sheetName,
+          result,
+        });
+      }
+    }
   };
 
   return (
@@ -106,7 +137,7 @@ const App: React.FC = () => {
 
       <Layout>
         <Sider
-          width="30%"
+          width="25%"
           style={{ background: colorBgContainer, padding: "12px 8px" }}
         >
           <FilePool
@@ -126,89 +157,97 @@ const App: React.FC = () => {
             flexDirection: "column",
           }}
         >
-          {activeTabs.length === 0 ? (
-            <div
-              style={{
-                flex: 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexDirection: "column",
-                color: "#aaa",
-              }}
-            >
-              <div>
-                <img src={emptyIcon} alt="empty" />
+          <Flex>
+            {activeTabs.length === 0 ? (
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexDirection: "column",
+                  color: "#aaa",
+                }}
+              >
+                <div>
+                  <img src={emptyIcon} alt="empty" />
+                </div>
+                <Title level={3} type="secondary">
+                  从左侧文件列表点击开始计算
+                </Title>
+                <Text type="secondary">
+                  支持多文件并行计算 + 高级筛选 + 自定义值
+                </Text>
               </div>
-              <Title level={3} type="secondary">
-                从左侧文件列表点击开始计算
-              </Title>
-              <Text type="secondary">
-                支持多文件并行计算 + 高级筛选 + 自定义值
-              </Text>
-            </div>
-          ) : (
-            <Tabs
-              type="editable-card"
-              hideAdd
-              activeKey={activeKey}
-              onChange={onTabChange}
-              onEdit={onTabEdit}
-              tabBarGutter={8}
-              style={{ flex: 1, display: "flex", flexDirection: "column" }}
-              items={activeTabs.map((tab) => {
-                const file = files.get(tab.fileId);
-                const result = tab.result;
+            ) : (
+              <Tabs
+                type="editable-card"
+                hideAdd
+                activeKey={activeKey}
+                onChange={onTabChange}
+                onEdit={onTabEdit}
+                tabBarGutter={8}
+                style={{ flex: 1, display: "flex", flexDirection: "column" }}
+                items={activeTabs.map((tab) => {
+                  const file = files.get(tab.fileId);
+                  const result = tab.result;
 
-                return {
-                  key: tab.key,
-                  label: (
-                    <span>
-                      <Text ellipsis={{ tooltip: file?.name }}>
-                        {file?.name || "加载中..."}
-                      </Text>
-                      {result !== 0 && (
-                        <Tag color="green" style={{ marginLeft: 8 }}>
-                          {result.toLocaleString()}
-                        </Tag>
-                      )}
-                    </span>
-                  ),
-                  children: (
-                    <div
-                      style={{
-                        height: "100%",
-                        display: "flex",
-                        flexDirection: "column",
-                      }}
-                    >
-                      {/* 规则构建区 */}
+                  return {
+                    key: tab.key,
+                    label: (
+                      <span>
+                        <Text ellipsis={{ tooltip: file?.name }}>
+                          {file?.name || "加载中..."}
+                        </Text>
+                        {result !== 0 && (
+                          <Tag color="green" style={{ marginLeft: 8 }}>
+                            {result.toLocaleString()}
+                          </Tag>
+                        )}
+                      </span>
+                    ),
+                    children: (
                       <div
                         style={{
-                          flex: 1,
-                          padding: "16px 24px",
-                          overflow: "auto",
+                          height: "100%",
+                          display: "flex",
+                          flexDirection: "column",
                         }}
                       >
-                        {file && (
-                          <RuleBuilder
-                            filesData={files}
-                            currentFileId={file.id}
-                            onCalculate={(res) => updateTabResult(file.id, res)}
-                          />
-                        )}
-                      </div>
+                        {/* 规则构建区 */}
+                        <div
+                          style={{
+                            flex: 1,
+                            padding: "16px 24px",
+                            overflow: "auto",
+                          }}
+                        >
+                          {file && (
+                            <RuleBuilder
+                              filesData={files}
+                              currentFileId={file.id}
+                              onCalculate={(res) =>
+                                updateTabResult(file.id, res, tab.sheetName)
+                              }
+                            />
+                          )}
+                        </div>
 
-                      {/* 超大结果展示区（固定在底部） */}
-                      <Divider style={{ margin: "16px 0" }} />
-                      {/* 结果展示区 */}
-                      <ResultPanel result={result} />
-                    </div>
-                  ),
-                };
-              })}
-            />
-          )}
+                        {/* 超大结果展示区（固定在底部） */}
+                        <Divider style={{ margin: "16px 0" }} />
+                        {/* 结果展示区 */}
+                        <ResultPanel result={result} />
+                      </div>
+                    ),
+                  };
+                })}
+              />
+            )}
+
+            <div style={{ width: "35%", marginLeft: 12 }}>
+              <HistoryPanel />
+            </div>
+          </Flex>
         </Content>
       </Layout>
     </Layout>
@@ -216,4 +255,8 @@ const App: React.FC = () => {
 };
 
 const root = createRoot(document.body);
-root.render(<App />);
+root.render(
+  <HistoryProvider>
+    <App />
+  </HistoryProvider>
+);

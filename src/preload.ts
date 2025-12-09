@@ -4,6 +4,10 @@ import { contextBridge, ipcRenderer } from "electron";
 
 contextBridge.exposeInMainWorld("electronAPI", {
   openFileDialog: () => ipcRenderer.invoke("dialog:openFile"),
-  readExcel: (filePath: string) =>
-    ipcRenderer.invoke("dialog:readExcel", filePath),
+  getUserDataPath: () => ipcRenderer.invoke("app:getUserDataPath"),
+  readFile: (filePath: string) => ipcRenderer.invoke("file:readFile", filePath),
+  writeFile: (filePath: string, data: string) =>
+    ipcRenderer.invoke("file:writeFile", filePath, data),
+  fileExists: (filePath: string) =>
+    ipcRenderer.invoke("file:fileExists", filePath),
 });

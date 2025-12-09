@@ -11,6 +11,7 @@ import path from "node:path";
 import started from "electron-squirrel-startup";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
+import fs from "node:fs";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -181,8 +182,30 @@ ipcMain.handle("dialog:openFile", async () => {
   return filePaths;
 });
 
-// 读取Excel文件内容
-ipcMain.handle("dialog:readExcel", async (event, filePath) => {});
+// 读取文件内容
+ipcMain.handle("file:readFile", async (event, filePath) =>
+  fs.promises.readFile(filePath, "utf-8")
+);
+
+// 写入文件内容
+ipcMain.handle(
+  "file:writeFile",
+  async (event, filePath: string, data: string) =>
+    fs.promises.writeFile(filePath, data)
+);
+
+// 检查文件是否存在
+ipcMain.handle("file:fileExists", async (event, filePath: string) =>
+  fs.promises
+    .access(filePath)
+    .then(() => true)
+    .catch(() => false)
+);
+
+// 提供用户数据路径
+ipcMain.handle("app:getUserDataPath", () => {
+  return app.getPath("userData");
+});
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits

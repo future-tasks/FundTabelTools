@@ -1,5 +1,5 @@
 // src/renderer/components/RuleBuilder.tsx —— 终极美观层级版
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Button,
   Select,
@@ -78,8 +78,15 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({
     ]);
   };
 
-  const removeRule = (key: string) =>
-    setRules(rules.filter((r) => r.key !== key));
+  const removeRule = (key: string) => {
+    // 剩余规则
+    const remainingRules = rules.filter((r) => r.key !== key);
+    setRules(remainingRules);
+    // 当删除最后一条规则时，清空计算值
+    if (remainingRules.length === 0) {
+      onCalculate(0);
+    }
+  };
 
   const updateRule = (
     key: string,
@@ -177,8 +184,8 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({
 
   return (
     <Space orientation="vertical" size="large" style={{ width: "100%" }}>
-      <div style={{ overflow: "auto", width: '100%', maxHeight: '50vh' }}>
-        <Space orientation="vertical" style={{ width: '100%' }}>
+      <div style={{ overflow: "auto", width: "100%", maxHeight: "38vh" }}>
+        <Space orientation="vertical" style={{ width: "100%" }}>
           {rules.map((rule, index) => (
             <Card
               key={rule.key}
@@ -207,7 +214,11 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({
                 />
               }
             >
-              <Space orientation="vertical" style={{ width: "100%" }} size="middle">
+              <Space
+                orientation="vertical"
+                style={{ width: "100%" }}
+                size="middle"
+              >
                 {/* 主规则区域 */}
                 <Space wrap>
                   <ExcelTree
@@ -247,7 +258,9 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({
                             : "B"
                       }
                       value={rule.ref}
-                      onChange={(e) => updateRule(rule.key, "ref", e.target.value)}
+                      onChange={(e) =>
+                        updateRule(rule.key, "ref", e.target.value)
+                      }
                       style={{ width: 100 }}
                     />
                   ) : (
@@ -261,7 +274,9 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({
                       />
                       <InputNumber
                         value={rule.value}
-                        onChange={(v) => updateRule(rule.key, "value", v as number)}
+                        onChange={(v) =>
+                          updateRule(rule.key, "value", v as number)
+                        }
                       />
                     </Space>
                   )}
@@ -298,13 +313,19 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({
                           checkedChildren="已启用筛选"
                           unCheckedChildren="点击启用筛选/排除"
                           checked={rule.enableExclude}
-                          onChange={(v) => updateRule(rule.key, "enableExclude", v)}
+                          onChange={(v) =>
+                            updateRule(rule.key, "enableExclude", v)
+                          }
                         />
                         <FilterOutlined
-                          style={{ color: rule.enableExclude ? "#1890ff" : "#aaa" }}
+                          style={{
+                            color: rule.enableExclude ? "#1890ff" : "#aaa",
+                          }}
                         />
                         <span
-                          style={{ color: rule.enableExclude ? "#1890ff" : "#999" }}
+                          style={{
+                            color: rule.enableExclude ? "#1890ff" : "#999",
+                          }}
                         >
                           {rule.enableExclude
                             ? `已启用 ${rule.excludeConditions.length} 条筛选条件`
@@ -336,12 +357,12 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({
                                     if (r.key === rule.key) {
                                       return {
                                         ...r,
-                                        excludeConditions: r.excludeConditions.map(
-                                          (c) =>
+                                        excludeConditions:
+                                          r.excludeConditions.map((c) =>
                                             c.key === cond.key
                                               ? { ...c, mode: v }
                                               : c
-                                        ),
+                                          ),
                                       };
                                     }
                                     return r;
@@ -361,16 +382,16 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({
                                     if (r.key === rule.key) {
                                       return {
                                         ...r,
-                                        excludeConditions: r.excludeConditions.map(
-                                          (c) =>
+                                        excludeConditions:
+                                          r.excludeConditions.map((c) =>
                                             c.key === cond.key
                                               ? {
-                                                ...c,
-                                                column:
-                                                  e.target.value.toUpperCase(),
-                                              }
+                                                  ...c,
+                                                  column:
+                                                    e.target.value.toUpperCase(),
+                                                }
                                               : c
-                                        ),
+                                          ),
                                       };
                                     }
                                     return r;
@@ -388,12 +409,15 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({
                                     if (r.key === rule.key) {
                                       return {
                                         ...r,
-                                        excludeConditions: r.excludeConditions.map(
-                                          (c) =>
+                                        excludeConditions:
+                                          r.excludeConditions.map((c) =>
                                             c.key === cond.key
-                                              ? { ...c, keyword: e.target.value }
+                                              ? {
+                                                  ...c,
+                                                  keyword: e.target.value,
+                                                }
                                               : c
-                                        ),
+                                          ),
                                       };
                                     }
                                     return r;
@@ -455,6 +479,8 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({
           description="此操作不可恢复"
           onConfirm={() => {
             setRules([]);
+            // 清空计算值
+            onCalculate(0);
             message.success("已清空所有规则");
           }}
           okText="确定清空"
