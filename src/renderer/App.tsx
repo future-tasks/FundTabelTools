@@ -240,7 +240,7 @@ const App: React.FC = () => {
                 onChange={onTabChange}
                 onEdit={onTabEdit}
                 tabBarGutter={8}
-                style={{ flex: 1, display: "flex", flexDirection: "column" }}
+                style={{ width: "65%" }}
                 items={activeTabs.map((tab) => {
                   const file = files.get(tab.fileId);
                   const result = tab.result;

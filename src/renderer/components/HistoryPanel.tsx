@@ -29,6 +29,7 @@ const HistoryPanel: React.FC = () => {
       extra={
         history.length > 0 && (
           <Popconfirm
+            placement="bottomRight"
             title="确认清空所有记录？"
             description="此操作不可恢复"
             onConfirm={async () => {
