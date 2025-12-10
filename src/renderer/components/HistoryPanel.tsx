@@ -153,13 +153,14 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ collapsed, onToggle }) => {
           onClick={onToggle}
           style={{
             position: "absolute",
-            left: collapsed ? 0 : -18,
+            left: collapsed ? 'auto' : -18,
+            right: !collapsed ? "auto" : 0,
             top: "50%",
             transform: buttonHovered
               ? "translateY(-50%) scale(1.05)"
               : "translateY(-50%)",
             zIndex: 1000,
-            borderRadius: collapsed ? "0 8px 8px 0" : "8px 0 0 8px",
+            borderRadius: "8px 0 0 8px",
             boxShadow: buttonHovered
               ? collapsed
                 ? "3px 3px 16px rgba(102, 126, 234, 0.5)"
