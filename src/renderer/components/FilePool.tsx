@@ -78,6 +78,14 @@ const FilePool: React.FC<FilePoolProps> = ({
     accept: ".xlsx,.xls",
     showUploadList: false,
     customRequest: ({ onSuccess }: any) => setTimeout(() => onSuccess("ok"), 0),
+    beforeUpload: (file: File) => {
+      // 检查文件数量限制
+      if (files.length >= 6) {
+        message.warning("最多只能上传6个文件，请先删除部分文件后再上传");
+        return false;
+      }
+      return true;
+    },
     onChange: async (info: any) => {
       const { file } = info;
       if (file.status !== "done") return;
@@ -99,10 +107,21 @@ const FilePool: React.FC<FilePoolProps> = ({
         const toParse = [...batchFiles.current];
         batchFiles.current = [];
 
+        // 检查添加后是否会超过限制
+        const remainingSlots = 6 - files.length;
+        if (remainingSlots <= 0) {
+          message.warning("已达到文件数量上限（最多6个），无法继续添加");
+          return;
+        }
+
+        // 只处理剩余可添加的文件数量
+        const filesToProcess = toParse.slice(0, remainingSlots);
+        const skippedCount = toParse.length - filesToProcess.length;
+
         const parsedFiles: ExcelFileData[] = [];
         let successCount = 0;
 
-        for (const rawFile of toParse) {
+        for (const rawFile of filesToProcess) {
           if (!rawFile.name.match(/\.(xlsx|xls)$/i)) {
             message.warning(`${rawFile.name} 不是 Excel 文件，已跳过`);
             continue;
@@ -121,7 +140,9 @@ const FilePool: React.FC<FilePoolProps> = ({
 
         if (successCount > 0) {
           onFilesLoaded(parsedFiles);
-          // message.success(`成功添加 ${successCount} 个文件（同名自动重命名）`);
+          if (skippedCount > 0) {
+            message.warning(`已达到上限，跳过了 ${skippedCount} 个文件（最多6个文件）`);
+          }
         }
       }, 200);
     },
@@ -160,15 +181,31 @@ const FilePool: React.FC<FilePoolProps> = ({
       <Upload.Dragger
         {...uploadProps}
         style={{ marginBottom: 16, padding: 32 }}
+        disabled={files.length >= 6}
       >
         <Space orientation="vertical" size="middle" align="center">
-          <UploadOutlined style={{ fontSize: 48, color: "#1890ff" }} />
+          <UploadOutlined 
+            style={{ 
+              fontSize: 48, 
+              color: files.length >= 6 ? "#d9d9d9" : "#1890ff" 
+            }} 
+          />
           <div>
-            <Text strong style={{ fontSize: 18 }}>
-              点击或拖拽文件到此处
+            <Text 
+              strong 
+              style={{ 
+                fontSize: 18,
+                color: files.length >= 6 ? "#00000040" : undefined
+              }}
+            >
+              {files.length >= 6 ? "已达到文件数量上限" : "点击或拖拽文件到此处"}
             </Text>
             <br />
-            <Text type="secondary">支持重复上传，同名文件自动重命名</Text>
+            <Text type="secondary">
+              {files.length >= 6 
+                ? "最多支持6个文件，请删除后再上传" 
+                : `支持重复上传，同名文件自动重命名（${files.length}/6）`}
+            </Text>
           </div>
         </Space>
       </Upload.Dragger>
