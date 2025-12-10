@@ -51,7 +51,7 @@ const createWindow = () => {
   // Create the browser window.
   const windowOptions = {
     icon: getIconPath(),
-    width: 1200,
+    width: 1350,
     height: 800,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
