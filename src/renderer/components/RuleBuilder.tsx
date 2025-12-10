@@ -60,6 +60,7 @@ interface ExcludeCondition {
   column: string;
   keyword: string;
   mode: "exclude" | "include";
+  logic: "AND" | "OR"; // 与下一个条件的逻辑关系
 }
 
 interface RuleItem {
@@ -147,6 +148,7 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({
                 column: "",
                 keyword: "",
                 mode: "exclude",
+                logic: "AND", // 默认 AND
               },
             ],
           };
@@ -191,19 +193,22 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({
         startRow: rule.startRow,
         endRow: rule.endRow,
         value: rule.value,
+        logic: index === 0 ? "AND" : rule.logic, // 第一个规则默认 AND，后续使用配置的逻辑
       };
 
       // 为每个规则的排除条件添加索引，实现真正的逐层处理
       if (rule.enableExclude && rule.excludeConditions.length > 0) {
-        rule.excludeConditions.forEach((cond) => {
+        rule.excludeConditions.forEach((cond, condIndex) => {
           excludes.push({
             fileId: rule.fileId,
             sheetName: rule.sheetName,
             excludeColumn: cond.column,
             excludeKeyword: cond.keyword,
             excludeMode: cond.mode,
+            conditionLogic: cond.logic,
             // 关键：添加规则索引，确保排除条件按顺序累积应用
             ruleIndex: index,
+            conditionIndex: condIndex,
           });
         });
       }
@@ -218,7 +223,8 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({
     // 显示处理过程的详细信息
     const processInfo = rules.map((rule, index) => {
       const hasExcludes = rule.enableExclude && rule.excludeConditions.length > 0;
-      return `规则${index + 1}: ${hasExcludes ? `含${rule.excludeConditions.length}个筛选条件` : '无筛选'}`;
+      const logicLabel = index > 0 ? `[${rule.logic}] ` : '';
+      return `${logicLabel}规则${index + 1}: ${hasExcludes ? `含${rule.excludeConditions.length}个筛选条件` : '无筛选'}`;
     }).join(' → ');
     
     message.success(`逐层处理完成！${processInfo} → 结果：${total.toLocaleString()}`);
@@ -389,8 +395,8 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({
                           size="small"
                           style={{ background: "#f9f9f9" }}
                         >
-                          <Space>
-                            <span>{i + 1}.</span>
+                          <Space wrap>
+                            <span style={{ fontWeight: 500 }}>{i + 1}.</span>
                             <Select
                               value={cond.mode}
                               onChange={(v) => {
@@ -411,6 +417,7 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({
                                   })
                                 );
                               }}
+                              style={{ width: 120 }}
                             >
                               <Option value="exclude">排除包含</Option>
                               <Option value="include">仅保留包含</Option>
@@ -466,7 +473,36 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({
                                   })
                                 );
                               }}
+                              style={{ width: 120 }}
                             />
+                            {/* 新增：逻辑关系选择器（最后一个条件不显示） */}
+                            {i < rule.excludeConditions.length - 1 && (
+                              <Select
+                                value={cond.logic}
+                                onChange={(v) => {
+                                  setRules(
+                                    rules.map((r) => {
+                                      if (r.key === rule.key) {
+                                        return {
+                                          ...r,
+                                          excludeConditions:
+                                            r.excludeConditions.map((c) =>
+                                              c.key === cond.key
+                                                ? { ...c, logic: v }
+                                                : c
+                                            ),
+                                        };
+                                      }
+                                      return r;
+                                    })
+                                  );
+                                }}
+                                style={{ width: 80 }}
+                              >
+                                <Option value="AND">且</Option>
+                                <Option value="OR">或</Option>
+                              </Select>
+                            )}
                             <Button
                               danger
                               size="small"
