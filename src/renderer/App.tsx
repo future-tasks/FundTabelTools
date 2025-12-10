@@ -35,6 +35,7 @@ const App: React.FC = () => {
   const [files, setFiles] = useState<Map<string, ExcelFileData>>(new Map());
   const [activeTabs, setActiveTabs] = useState<CalcTab[]>([]);
   const [activeKey, setActiveKey] = useState<string>("");
+  const [historyCollapsed, setHistoryCollapsed] = useState(false);
 
   const {
     token: { colorBgContainer, colorPrimary },
@@ -195,9 +196,10 @@ const App: React.FC = () => {
             padding: "12px 12px 12px 0",
             display: "flex",
             flexDirection: "column",
+            overflow: "visible",
           }}
         >
-          <Flex>
+          <Flex style={{ position: "relative", overflow: "visible" }}>
             {activeTabs.length === 0 ? (
               <div
                 style={{
@@ -227,7 +229,10 @@ const App: React.FC = () => {
                 onChange={onTabChange}
                 onEdit={onTabEdit}
                 tabBarGutter={8}
-                style={{ width: "65%" }}
+                style={{ 
+                  width: historyCollapsed ? "100%" : "65%",
+                  transition: "width 0.3s ease",
+                }}
                 items={activeTabs.map((tab) => {
                   const file = files.get(tab.fileId);
                   const result = tab.result;
@@ -282,8 +287,21 @@ const App: React.FC = () => {
               />
             )}
 
-            <div style={{ width: "35%", marginLeft: 12 }}>
-              <HistoryPanel />
+            {/* 历史记录侧边抽屉 */}
+            <div
+              style={{
+                width: historyCollapsed ? "40px" : "35%",
+                marginLeft: historyCollapsed ? 0 : 12,
+                transition: "all 0.3s ease",
+                position: "relative",
+                height: 'calc(100vh - 90px)',
+                overflow: "visible",
+              }}
+            >
+              <HistoryPanel 
+                collapsed={historyCollapsed}
+                onToggle={() => setHistoryCollapsed(!historyCollapsed)}
+              />
             </div>
           </Flex>
         </Content>

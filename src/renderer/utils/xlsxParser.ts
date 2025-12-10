@@ -77,6 +77,8 @@ interface ExcludeRule {
   excludeKeyword: string;
   excludeMode: "exclude" | "include";
   conditionLogic?: "AND" | "OR"; // 与下一个条件的逻辑关系
+  filterType?: "keyword" | "columnValue"; // 筛选类型
+  selectedValues?: string[]; // 选中的列值
 }
 
 interface RuleWithIndex extends ExcludeRule {
@@ -225,9 +227,20 @@ const applyConditionsToRows = (
     // 计算每个条件的结果
     const results = conditions.map((cond) => {
       const colIdx = XLSX.utils.decode_col(cond.excludeColumn.toUpperCase());
-      const cellVal = String(row[colIdx] ?? "").toLowerCase();
-      const keyword = cond.excludeKeyword.toLowerCase();
-      const matches = cellVal.includes(keyword);
+      const cellVal = row[colIdx];
+      const cellStr = cellVal == null || cellVal === "" ? "(空)" : String(cellVal);
+      
+      let matches = false;
+      
+      // 根据筛选类型判断是否匹配
+      if (cond.filterType === "columnValue" && cond.selectedValues && cond.selectedValues.length > 0) {
+        // 列值筛选：检查单元格值是否在选中的值列表中
+        matches = cond.selectedValues.includes(cellStr);
+      } else {
+        // 关键字筛选（默认行为）
+        const keyword = cond.excludeKeyword.toLowerCase();
+        matches = cellStr.toLowerCase().includes(keyword);
+      }
       
       // exclude 模式：匹配则排除（返回 false），不匹配则保留（返回 true）
       // include 模式：匹配则保留（返回 true），不匹配则排除（返回 false）

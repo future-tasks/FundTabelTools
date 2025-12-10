@@ -43,7 +43,7 @@ const ExcelTree: React.FC<ExcelTreeProps> = ({
             }}
           >
             {isUsed && (
-              <span style={{ color: "#52c41a", fontSize: 16 }}>✓</span>
+              <span style={{ color: "#52c41a", fontSize: 14 }}>✓</span>
             )}
             <Text ellipsis={true} style={{ width: 100 }} title={sheet.name}>
               {sheet.name}
