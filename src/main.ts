@@ -87,6 +87,7 @@ const createWindow = () => {
     icon: getIconPath(),
     width: 1350,
     height: 800,
+    autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname2, "preload.js"),
     },
@@ -113,6 +114,11 @@ const createWindow = () => {
   }
 
   mainWindow = new BrowserWindow(windowOptions);
+
+  // 生产环境完全隐藏菜单栏
+  if (app.isPackaged) {
+    mainWindow.setMenuBarVisibility(false);
+  }
 
   mainWindow.on("close", (event) => {
     const isQuitting = (app as any).isQuitting;
