@@ -11,8 +11,16 @@ import path from "node:path";
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    icon: path.resolve(__dirname, "public/icons/icon.ico"),
-    extraResource: ["public/icons/"], // 确保图标文件夹被包含在打包中
+    // 图标配置：electron-packager 会根据平台自动选择
+    // macOS 使用 .icns，Windows 使用 .ico，Linux 使用 .png
+    // 这里指定 macOS 图标，Windows 图标在 MakerSquirrel 中指定
+    icon: path.resolve(__dirname, "public/icons/icon.icns"), // macOS 主图标
+    extraResource: [
+      // 确保所有图标文件都被包含在打包中
+      path.resolve(__dirname, "public/icons/icon.icns"),
+      path.resolve(__dirname, "public/icons/icon.ico"),
+      path.resolve(__dirname, "public/icons/icon.png"),
+    ],
   },
   rebuildConfig: {},
   makers: [
